@@ -1,0 +1,25 @@
+---
+title: "New_penguin"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(ggplot2)
+```
+
+```{r}
+source(here("functions", "cleaning.R"))
+```
+
+```{r}
+write.csv(penguins_clean, here("Data", "penguins_clean.csv"))
+```
+
+```{r}
+
+```
+

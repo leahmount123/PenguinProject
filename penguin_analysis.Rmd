@@ -1,0 +1,72 @@
+```{r set-up, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(palmerpenguins)
+library(janitor)
+library(here)
+```
+
+```{r}
+source(here("functions", "cleaning.R"))
+```
+
+```{r}
+# Load raw data again using csv
+penguins_raw <- read.csv(here("Data", "penguins_raw.csv"))
+```
+
+```{r}
+cleaning_penguin_columns <- function(raw_data){
+    raw_data %>%
+      clean_names() %>%
+      shorten_species() %>%
+      select(-comments) %>%
+      select(-starts_with("Delta"))
+}
+penguins_clean <- cleaning_penguin_columns(penguins_raw)
+```
+
+```{r}
+write.csv(penguins_clean, here("Data", "penguins_clean.csv"))
+```
+
+```{r}
+penguins_clean <- read_csv(here("Data","penguins_clean.csv"))
+```
+
+```{r}
+penguins_flippers <- penguins_clean %>%
+    select(species, flipper_length_mm) %>%
+    drop_na()
+```
+
+```{r}
+species_colours <- c("Adelie" = "darkorange",
+                     "Chinstrap" = "purple",
+                     "Gentoo" = "cyan4")
+```
+
+```{r}
+flipper_boxplot <- ggplot(
+    data = penguins_flippers,
+    aes(x = species,
+        y = flipper_length_mm)) +
+    geom_boxplot(aes(colour = species),
+                 width = 0.3,
+               show.legend = FALSE) + 
+   geom_jitter(aes(colour = species),
+              alpha = 0.3,
+              show.legend = FALSE,
+              position = position_jitter(
+                width = 0.2,
+                seed = 0)) +
+  scale_colour_manual(values = species_colours) + 
+    labs(x = "Penguin species",
+        y = "Flipper Length (mm)") +
+  theme_bw()
+flipper_boxplot
+```
+
+```{r}
+
+```
