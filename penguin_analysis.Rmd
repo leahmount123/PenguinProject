@@ -64,9 +64,5 @@ flipper_boxplot <- ggplot(
     labs(x = "Penguin species",
         y = "Flipper Length (mm)") +
   theme_bw()
-flipper_boxplot
-```
-
-```{r}
-
+flipper_boxplot 
 ```
