@@ -1,25 +1,272 @@
 ---
-title: "New_penguin"
+title: "MT24W4: Reproducible Science"
+author: "Leah Mount"
 format: html
 editor: visual
 ---
+## MT24W1: Reproducible Science I
+
+:::callout-tip
+#### The data set
+
+- This data set on Palmer penguins has nice examples all over the internet
+- It contains morphometric data from 3 species of penguin
+
+:::
+
+### Installing and loading libraries
 
 ```{r}
+knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(here)
+library(palmerpenguins)
 library(janitor)
-library(ggplot2)
+library(here)
 ```
+
+:::callout-note
+#### The *here* function
+
+- When we run R code, we want it to be able to read and write to the files in our project
+- As a result, we need to tell R where the current project is
+- Because we used RProject, this is already inbuilt
+- **Check this**: running *here::here()* into the console terminal
+  - This should return the path to the project
+
+:::
 
 ```{r}
 source(here("functions", "cleaning.R"))
 ```
+
+:::callout-note
+This piece of code above is explained further on
+
+:::
+
+### Loading the penguin data
+
+```{r}
+head(penguins_raw)
+colnames(penguins_raw)
+```
+
+:::callout-tip
+- A problem we can see is that the column names are badly formatted
+- A best practice is to preserve the raw data as **penguins_raw.csv** and consider it 'read only'
+  - That means it is preserved exactly as it was before we started to meddle with it
+  
+:::
+
+```{r}
+penguins_raw <- read.csv(here("Data", "penguins_raw.csv"))
+```
+
+### Cleaning the data
+
+:::callout-tip
+- **Remove columns**: use select(-___)
+  - **2 columns at once**: use select(DATA, -starts_with("___"))
+
+:::
+
+:::callout-warning
+This code above is **bad practice**
+
+:::
+
+:::callout-tip
+#### Using piping
+- We can use piping from the tidyverse library
+- The |> *(%>% in R markdown)* means "and then"
+  - We can use it to chain commands together
+- **Shortcut**: ctrl + shift + M
+
+:::
+
+:::callout-tip
+#### Cleaning column names
+- We still have a problem with the names of the column
+- The *janitor* library has a function called **clean_names()**
+  - This cleans the column names for us
+- Now, the columns will be computer readable and human readable
+
+:::
+
+:::callout-note
+#### This is what the code should look like at this point:
+- library(tidyverse)
+- library(palmerpenguins)
+- library(here)
+- library(janitor)
+
+head(penguins_raw)
+
+write_csv(penguins_raw, here("Data", "penguins_raw.csv"))
+
+- penguins_clean <- penguins_raw |>
+  - select(-Comments) |>
+  - select(-starts_with("Delta")) |>
+  - clean_names()
+  
+colnames(penguins_clean)
+
+:::
+
+### Reusable code
+
+:::callout-tip
+#### Reusable code using functions
+- We often need the same code over and over again
+- This aspect of building data pipelines is making the parts **reusable** for other purposes
+- These code blocks that might be making a figure / running a specific model you know you'll need multiple times
+- Something that is extremely helpful in making reusable code is making a **function**
+  - We use functions all the time, normally loading them from libraries
+1. We start with the name of the function
+  - E.g. cleaning_penguin_columns
+2. In this case, the raw data is fed into the function()
+3. We then put the pipe inside this function
+  - The input can have a generic name, e.g. raw_data
+4. The {} brackets specify what is inside the function
+
+:::
+
+```{r}
+cleaning_penguin_columns <- function(raw_data){
+    raw_data %>%
+      clean_names() %>%
+      shorten_species() %>%
+      select(-comments) %>%
+      select(-starts_with("Delta"))
+}
+penguins_clean <- cleaning_penguin_columns(penguins_raw)
+```
+
+:::callout-tip
+#### Saving clean data
+We can use the *here* library to save the data
+
+:::
 
 ```{r}
 write.csv(penguins_clean, here("Data", "penguins_clean.csv"))
 ```
 
 ```{r}
-
+penguins_clean <- read_csv(here("Data","penguins_clean.csv"))
 ```
 
+### Moving functions
+- So far in our code, we have been careful to save a copy of our raw data and clean data
+  - We also want to save a copy of our cleaning code
+- It is critical to also save a copy of the steps we took to clean the data so it is open to scrutiny and checking
+1. Make a new subfolder called "functions" were we can put our reusable code
+    - **Console**: dir.create(here("functions"))
+2. Make a new R script in the "functions" folder
+    - **Console**: file.create(here("functions, "cleaning.R"))
+3. Inside this R file, we can paste our function
+4. Load the function into the current script
+    - **Code**: source(here("functions", "cleaning.R"))
+  
+### Subsetting data
+- As a part of data pipelines, we often want to subset the data for plotting/analysis
+- We may only want to look at 2 columns (e.g. species and body mass)
+  - We can do this by using te **select()** function
+  
+```{r}
+body_mass <- penguins_clean |>
+    select(species, body_mass_g) |>
+    remove_NA()
+head(body_mass)
+```
+
+:::callout-caution
+We can see there is NA, meaning a missing value
+- We have already removed empty rows, but this is an example of only a missing value
+
+:::
+
+:::callout-tip
+We can count the number of rows and the number of missing values
+
+:::
+
+```{r}
+print(paste("Number of rows:", nrow(body_mass)))
+print(paste("Number of missing values:", sum(is.na(body_mass))))
+```
+
+:::callout-tip
+We can remove missing values using the na.omit() function from the cleaning.R file on canvas
+- To avoid overwriting, we have added **remove_NA()** to our pipe from before
+
+:::
+
+### Filtering by species
+Another kind of subsetting is to filter by a specific value. In this case, we might want to look at just the Adelie penguins.
+
+```{r}
+adelie_data <- penguins_clean |>
+    filter(species == "Adelie")
+head(adelie_data)
+```
+
+:::callout-tip
+We can also combine to get just the body mass of Adelie penguins.
+
+:::
+
+```{r}
+adelie_body_mass <- penguins_clean |>
+    filter(species == "Adelie") |>
+    select(species, body_mass_g) |>
+    remove_NA()
+head(adelie_body_mass)
+```
+
+### Installing libraries in the reproducible way
+- Before, we have been using **install.packages() to install the libraries
+  - This is not the best way to do it, as it is not reproducible
+1. Install renv
+2. Initialise renv; renv::init() in the console
+- We can create a snapshot of everything we have installed, creating a file called renv.lock
+  - **Console**: renv::snapshot()
+- We can look at a summary of libraries we have installed
+  - **Console**: renv::diagnostics()
+- When someone else wants to run our code, they can restore the snapshot to ensure they have the same libraries installed
+  - **Console**: renv::restore()
+
+## MT24W4: Reproducible Science II
+
+```{r}
+penguins_flippers <- penguins_clean %>%
+    select(species, flipper_length_mm) %>%
+    drop_na()
+```
+
+```{r}
+species_colours <- c("Adelie" = "darkorange",
+                     "Chinstrap" = "purple",
+                     "Gentoo" = "cyan4")
+```
+
+```{r}
+flipper_boxplot <- ggplot(
+    data = penguins_flippers,
+    aes(x = species,
+        y = flipper_length_mm)) +
+    geom_boxplot(aes(colour = species),
+                 width = 0.3,
+               show.legend = FALSE) + 
+   geom_jitter(aes(colour = species),
+              alpha = 0.3,
+              show.legend = FALSE,
+              position = position_jitter(
+                width = 0.2,
+                seed = 0)) +
+  scale_colour_manual(values = species_colours) + 
+    labs(x = "Penguin species",
+        y = "Flipper Length (mm)") +
+  theme_bw()
+flipper_boxplot 
+```
